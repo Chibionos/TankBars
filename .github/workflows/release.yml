@@ -103,14 +103,22 @@ jobs:
         run: |
           # CurseForge upload
           if [[ -n "$CF_API_KEY" && -n "$CF_PROJECT_ID" ]]; then
-            RESPONSE=$(curl -s -o response.txt -w "%{http_code}" \
-              -H "X-Api-Token: $CF_API_KEY" \
-              -F "metadata={\"changelog\":\"$(cat CHANGELOG.txt | jq -Rs .)\",\"changelogType\":\"markdown\",\"displayName\":\"TankBars ${{ steps.version.outputs.version }}\",\"gameVersions\":[10467],\"releaseType\":\"release\"}" \
-              -F "file=@${{ steps.package.outputs.zip_file }}" \
-              "https://wow.curseforge.com/api/projects/$CF_PROJECT_ID/upload-file")
+            # Prepare changelog - properly escape for JSON
+            CHANGELOG=$(cat CHANGELOG.txt | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | sed ':a;N;$!ba;s/\n/\\n/g')
             
-            if [[ "$RESPONSE" == "200" ]]; then
+            # Create metadata JSON as a single line
+            METADATA="{\"changelog\":\"$CHANGELOG\",\"changelogType\":\"markdown\",\"displayName\":\"TankBars ${{ steps.version.outputs.version }}\",\"gameVersions\":[10522],\"releaseType\":\"release\"}"
+            
+            echo "Uploading to CurseForge..."
+            RESPONSE=$(curl -s -o response.txt -w "%{http_code}" \
+              -H "x-api-key: $CF_API_KEY" \
+              -F "metadata=$METADATA" \
+              -F "file=@${{ steps.package.outputs.zip_file }}" \
+              "https://api.curseforge.com/api/projects/$CF_PROJECT_ID/upload-file")
+            
+            if [[ "$RESPONSE" == "200" || "$RESPONSE" == "201" ]]; then
               echo "✅ Successfully uploaded to CurseForge"
+              cat response.txt
             else
               echo "⚠️ CurseForge upload failed with status: $RESPONSE"
               cat response.txt
