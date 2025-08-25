@@ -95,7 +95,6 @@ jobs:
           asset_content_type: application/zip
 
       - name: Upload to CurseForge
-        if: secrets.CURSEFORGE_API_TOKEN != ''
         env:
           CF_API_KEY: ${{ secrets.CURSEFORGE_API_TOKEN }}
           CF_PROJECT_ID: ${{ secrets.CURSEFORGE_PROJECT_ID }}
@@ -119,7 +118,6 @@ jobs:
           fi
 
       - name: Upload to Wago
-        if: secrets.WAGO_API_TOKEN != ''
         env:
           WAGO_API_TOKEN: ${{ secrets.WAGO_API_TOKEN }}
           WAGO_PROJECT_ID: ${{ secrets.WAGO_PROJECT_ID }}
