@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to Tank Bar Helper will be documented in this file.
+All notable changes to TankBars will be documented in this file.
 
 ## [v1.1.0] - 2025-08-25
 

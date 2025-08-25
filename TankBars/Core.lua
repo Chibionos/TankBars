@@ -1,8 +1,8 @@
 local addonName, addon = ...
 local L = {}
 
-TankBarHelper = {}
-local TBH = TankBarHelper
+TankBars = {}
+local TBH = TankBars
 
 local frame = nil
 local healthBar = nil
@@ -59,7 +59,7 @@ TBH.defaults = {
 local function SafeCall(func, ...)
     local success, err = pcall(func, ...)
     if not success then
-        print("|cffff0000Tank Bar Helper Error:|r " .. tostring(err))
+        print("|cffff0000TankBars Error:|r " .. tostring(err))
     end
     return success
 end
@@ -83,26 +83,26 @@ local function ValidateColor(color)
 end
 
 local function InitializeDB()
-    TankBarHelperDB = TankBarHelperDB or {}
+    TankBarsDB = TankBarsDB or {}
     for key, value in pairs(TBH.defaults) do
-        if TankBarHelperDB[key] == nil then
-            TankBarHelperDB[key] = value
+        if TankBarsDB[key] == nil then
+            TankBarsDB[key] = value
         end
     end
     
-    TankBarHelperDB.width = ValidateNumber(TankBarHelperDB.width, TBH.defaults.width)
-    TankBarHelperDB.height = ValidateNumber(TankBarHelperDB.height, TBH.defaults.height)
-    TankBarHelperDB.spacing = ValidateNumber(TankBarHelperDB.spacing, TBH.defaults.spacing)
-    TankBarHelperDB.numberSize = ValidateNumber(TankBarHelperDB.numberSize, TBH.defaults.numberSize)
-    TankBarHelperDB.animationSpeed = ValidateNumber(TankBarHelperDB.animationSpeed, TBH.defaults.animationSpeed)
+    TankBarsDB.width = ValidateNumber(TankBarsDB.width, TBH.defaults.width)
+    TankBarsDB.height = ValidateNumber(TankBarsDB.height, TBH.defaults.height)
+    TankBarsDB.spacing = ValidateNumber(TankBarsDB.spacing, TBH.defaults.spacing)
+    TankBarsDB.numberSize = ValidateNumber(TankBarsDB.numberSize, TBH.defaults.numberSize)
+    TankBarsDB.animationSpeed = ValidateNumber(TankBarsDB.animationSpeed, TBH.defaults.animationSpeed)
     
-    TankBarHelperDB.healthColor = ValidateColor(TankBarHelperDB.healthColor)
-    TankBarHelperDB.shieldColor = ValidateColor(TankBarHelperDB.shieldColor)
-    TankBarHelperDB.backgroundColor = ValidateColor(TankBarHelperDB.backgroundColor)
-    TankBarHelperDB.borderColor = ValidateColor(TankBarHelperDB.borderColor)
+    TankBarsDB.healthColor = ValidateColor(TankBarsDB.healthColor)
+    TankBarsDB.shieldColor = ValidateColor(TankBarsDB.shieldColor)
+    TankBarsDB.backgroundColor = ValidateColor(TankBarsDB.backgroundColor)
+    TankBarsDB.borderColor = ValidateColor(TankBarsDB.borderColor)
     
-    if type(TankBarHelperDB.position) ~= "table" or #TankBarHelperDB.position < 3 then
-        TankBarHelperDB.position = TBH.defaults.position
+    if type(TankBarsDB.position) ~= "table" or #TankBarsDB.position < 3 then
+        TankBarsDB.position = TBH.defaults.position
     end
 end
 
@@ -111,8 +111,8 @@ local function UpdateBarPosition()
     
     SafeCall(function()
         frame:ClearAllPoints()
-        if TankBarHelperDB.position and #TankBarHelperDB.position >= 3 then
-            frame:SetPoint(unpack(TankBarHelperDB.position))
+        if TankBarsDB.position and #TankBarsDB.position >= 3 then
+            frame:SetPoint(unpack(TankBarsDB.position))
         else
             frame:SetPoint("CENTER", UIParent, "CENTER", -200, 0)
         end
@@ -130,7 +130,7 @@ end
 local function SetupFrame()
     if not SafeCall(function()
         if not frame then
-            frame = CreateFrame("Frame", "TankBarHelperFrame", UIParent, "BackdropTemplate")
+            frame = CreateFrame("Frame", "TankBarsFrame", UIParent, "BackdropTemplate")
         end
         
         if not healthBar then
@@ -157,8 +157,8 @@ local function SetupFrame()
             shieldPercentText = frame:CreateFontString(nil, "OVERLAY")
         end
         
-        local totalWidth = (TankBarHelperDB.width * 2) + TankBarHelperDB.spacing
-        frame:SetSize(totalWidth + 8, TankBarHelperDB.height)
+        local totalWidth = (TankBarsDB.width * 2) + TankBarsDB.spacing
+        frame:SetSize(totalWidth + 8, TankBarsDB.height)
         
         if frame.SetBackdrop then
             frame:SetBackdrop({
@@ -169,32 +169,32 @@ local function SetupFrame()
                 edgeSize = 12,
                 insets = { left = 2, right = 2, top = 2, bottom = 2 }
             })
-            frame:SetBackdropColor(unpack(ValidateColor(TankBarHelperDB.backgroundColor)))
-            frame:SetBackdropBorderColor(unpack(ValidateColor(TankBarHelperDB.borderColor)))
+            frame:SetBackdropColor(unpack(ValidateColor(TankBarsDB.backgroundColor)))
+            frame:SetBackdropBorderColor(unpack(ValidateColor(TankBarsDB.borderColor)))
         end
         
         UpdateBarPosition()
         
-        frame:SetMovable(not TankBarHelperDB.locked)
-        frame:EnableMouse(not TankBarHelperDB.locked)
+        frame:SetMovable(not TankBarsDB.locked)
+        frame:EnableMouse(not TankBarsDB.locked)
         frame:RegisterForDrag("LeftButton")
         frame:SetScript("OnDragStart", function(self)
-            if not TankBarHelperDB.locked then
+            if not TankBarsDB.locked then
                 self:StartMoving()
             end
         end)
         frame:SetScript("OnDragStop", function(self)
             self:StopMovingOrSizing()
             SafeCall(function()
-                TankBarHelperDB.position = {self:GetPoint()}
+                TankBarsDB.position = {self:GetPoint()}
             end)
         end)
         
         healthBar:ClearAllPoints()
         healthBar:SetPoint("LEFT", frame, "LEFT", 4, 0)
-        healthBar:SetSize(TankBarHelperDB.width, TankBarHelperDB.height - 4)
+        healthBar:SetSize(TankBarsDB.width, TankBarsDB.height - 4)
         healthBar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
-        healthBar:SetStatusBarColor(unpack(ValidateColor(TankBarHelperDB.healthColor)))
+        healthBar:SetStatusBarColor(unpack(ValidateColor(TankBarsDB.healthColor)))
         healthBar:SetOrientation("VERTICAL")
         healthBar:SetReverseFill(false)
         
@@ -208,7 +208,7 @@ local function SetupFrame()
         if not damageProjectionBar then
             damageProjectionBar = healthBar:CreateTexture(nil, "OVERLAY")
             damageProjectionBar:SetTexture("Interface\\Buttons\\WHITE8x8")
-            damageProjectionBar:SetWidth(TankBarHelperDB.width - 4)
+            damageProjectionBar:SetWidth(TankBarsDB.width - 4)
             damageProjectionBar:SetVertexColor(1, 0.3, 0, 0.6)
             damageProjectionBar:SetBlendMode("ADD")
             damageProjectionBar:Hide()
@@ -216,9 +216,9 @@ local function SetupFrame()
         
         shieldBar:ClearAllPoints()
         shieldBar:SetPoint("RIGHT", frame, "RIGHT", -4, 0)
-        shieldBar:SetSize(TankBarHelperDB.width, TankBarHelperDB.height - 4)
+        shieldBar:SetSize(TankBarsDB.width, TankBarsDB.height - 4)
         shieldBar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
-        shieldBar:SetStatusBarColor(unpack(ValidateColor(TankBarHelperDB.shieldColor)))
+        shieldBar:SetStatusBarColor(unpack(ValidateColor(TankBarsDB.shieldColor)))
         shieldBar:SetOrientation("VERTICAL")
         shieldBar:SetReverseFill(false)
         
@@ -231,7 +231,7 @@ local function SetupFrame()
         
         healthPercentText:ClearAllPoints()
         healthPercentText:SetPoint("TOP", healthBar, "BOTTOM", 0, -5)
-        healthPercentText:SetFont("Fonts\\FRIZQT__.TTF", TankBarHelperDB.numberSize + 2, "OUTLINE")
+        healthPercentText:SetFont("Fonts\\FRIZQT__.TTF", TankBarsDB.numberSize + 2, "OUTLINE")
         healthPercentText:SetTextColor(0.9, 1, 0.9)
         healthPercentText:SetJustifyH("CENTER")
         healthPercentText:SetDrawLayer("OVERLAY", 7)
@@ -239,7 +239,7 @@ local function SetupFrame()
         
         shieldPercentText:ClearAllPoints()
         shieldPercentText:SetPoint("TOP", shieldBar, "BOTTOM", 0, -5)
-        shieldPercentText:SetFont("Fonts\\FRIZQT__.TTF", TankBarHelperDB.numberSize + 2, "OUTLINE")
+        shieldPercentText:SetFont("Fonts\\FRIZQT__.TTF", TankBarsDB.numberSize + 2, "OUTLINE")
         shieldPercentText:SetTextColor(0.7, 0.9, 1)
         shieldPercentText:SetJustifyH("CENTER")
         shieldPercentText:SetDrawLayer("OVERLAY", 7)
@@ -266,7 +266,7 @@ local function SetupFrame()
         
         if not threatBar then
             threatBar = CreateFrame("StatusBar", nil, frame)
-            threatBar:SetSize((TankBarHelperDB.width * 2) + TankBarHelperDB.spacing, 8)
+            threatBar:SetSize((TankBarsDB.width * 2) + TankBarsDB.spacing, 8)
             threatBar:SetPoint("TOP", frame, "BOTTOM", 0, -30)
             threatBar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
             threatBar:SetStatusBarColor(0, 1, 0, 1)
@@ -299,8 +299,8 @@ local function SetupFrame()
         end
         
         if not offTankFrame then
-            offTankFrame = CreateFrame("Frame", "TankBarHelperOffTankFrame", UIParent, "BackdropTemplate")
-            offTankFrame:SetSize(totalWidth / 1.5, TankBarHelperDB.height / 1.5)
+            offTankFrame = CreateFrame("Frame", "TankBarsOffTankFrame", UIParent, "BackdropTemplate")
+            offTankFrame:SetSize(totalWidth / 1.5, TankBarsDB.height / 1.5)
             offTankFrame:SetPoint("LEFT", frame, "RIGHT", 20, 0)
             
             if offTankFrame.SetBackdrop then
@@ -318,7 +318,7 @@ local function SetupFrame()
             
             offTankHealthBar = CreateFrame("StatusBar", nil, offTankFrame)
             offTankHealthBar:SetPoint("LEFT", offTankFrame, "LEFT", 3, 0)
-            offTankHealthBar:SetSize(TankBarHelperDB.width / 1.5, (TankBarHelperDB.height / 1.5) - 4)
+            offTankHealthBar:SetSize(TankBarsDB.width / 1.5, (TankBarsDB.height / 1.5) - 4)
             offTankHealthBar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
             offTankHealthBar:SetStatusBarColor(0.2, 0.8, 0.2, 1)
             offTankHealthBar:SetOrientation("VERTICAL")
@@ -331,7 +331,7 @@ local function SetupFrame()
             
             offTankShieldBar = CreateFrame("StatusBar", nil, offTankFrame)
             offTankShieldBar:SetPoint("RIGHT", offTankFrame, "RIGHT", -3, 0)
-            offTankShieldBar:SetSize(TankBarHelperDB.width / 1.5, (TankBarHelperDB.height / 1.5) - 4)
+            offTankShieldBar:SetSize(TankBarsDB.width / 1.5, (TankBarsDB.height / 1.5) - 4)
             offTankShieldBar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
             offTankShieldBar:SetStatusBarColor(0.2, 0.6, 1, 1)
             offTankShieldBar:SetOrientation("VERTICAL")
@@ -363,7 +363,7 @@ local function SetupFrame()
             offTankFrame:Hide()
         end
     end) then
-        print("|cffff0000Tank Bar Helper:|r Failed to setup frame")
+        print("|cffff0000TankBars:|r Failed to setup frame")
         return false
     end
     
@@ -387,7 +387,7 @@ local function SmoothUpdate(current, target, speed)
     target = ValidateNumber(target, 0)
     speed = ValidateNumber(speed, 0.15)
     
-    if not TankBarHelperDB.smoothAnimation then
+    if not TankBarsDB.smoothAnimation then
         return target
     end
     
@@ -465,7 +465,7 @@ local function FindOffTank()
 end
 
 local function UpdateOffTankBar()
-    if not offTankFrame or not TankBarHelperDB.showOffTank then return end
+    if not offTankFrame or not TankBarsDB.showOffTank then return end
     
     offTankUnit = FindOffTank()
     
@@ -562,8 +562,8 @@ local function UpdateBars()
         UpdateDamageHistory()
         
         if projectedDamage > 0 and damageProjectionBar then
-            local damageHeight = (projectedDamage / maxHealth) * (TankBarHelperDB.height - 4)
-            damageHeight = math.min(damageHeight, TankBarHelperDB.height - 4)
+            local damageHeight = (projectedDamage / maxHealth) * (TankBarsDB.height - 4)
+            damageHeight = math.min(damageHeight, TankBarsDB.height - 4)
             
             damageProjectionBar:SetHeight(damageHeight)
             damageProjectionBar:ClearAllPoints()
@@ -584,8 +584,8 @@ local function UpdateBars()
             damageProjectionBar:Hide()
         end
         
-        smoothHealthValue = SmoothUpdate(smoothHealthValue, currentHealth, TankBarHelperDB.animationSpeed)
-        smoothShieldValue = SmoothUpdate(smoothShieldValue, currentShield, TankBarHelperDB.animationSpeed)
+        smoothHealthValue = SmoothUpdate(smoothHealthValue, currentHealth, TankBarsDB.animationSpeed)
+        smoothShieldValue = SmoothUpdate(smoothShieldValue, currentShield, TankBarsDB.animationSpeed)
         
         healthBar:SetMinMaxValues(0, maxHealth)
         healthBar:SetValue(smoothHealthValue)
@@ -596,7 +596,7 @@ local function UpdateBars()
         shieldBar:SetMinMaxValues(0, maxShield)
         shieldBar:SetValue(smoothShieldValue)
         
-        if TankBarHelperDB.showNumbers and healthPercentText and shieldPercentText then
+        if TankBarsDB.showNumbers and healthPercentText and shieldPercentText then
             local healthStr = FormatNumber(smoothHealthValue)
             local shieldStr = FormatNumber(smoothShieldValue)
             
@@ -620,7 +620,7 @@ local function UpdateBars()
             end
         end
         
-        if healthPercent <= TankBarHelperDB.lowHealthThreshold and skullIcon and skullCircle then
+        if healthPercent <= TankBarsDB.lowHealthThreshold and skullIcon and skullCircle then
             skullIcon:Show()
             skullCircle:Show()
             
@@ -718,7 +718,7 @@ function TBH:Initialize()
         InitializeDB()
         
         if not SetupFrame() then
-            print("|cffff0000Tank Bar Helper:|r Failed to initialize addon")
+            print("|cffff0000TankBars:|r Failed to initialize addon")
             return
         end
         
@@ -750,7 +750,7 @@ function TBH:Initialize()
                 TBH:InitializeBossAbilityPrediction()
             end
             
-            print("|cff00ccffTank Bar Helper|r loaded successfully!")
+            print("|cff00ccffTankBars|r loaded successfully!")
         end
     end)
 end
@@ -759,7 +759,7 @@ function TBH:Lock()
     if not frame then return end
     
     SafeCall(function()
-        TankBarHelperDB.locked = true
+        TankBarsDB.locked = true
         frame:SetMovable(false)
         frame:EnableMouse(false)
     end)
@@ -769,7 +769,7 @@ function TBH:Unlock()
     if not frame then return end
     
     SafeCall(function()
-        TankBarHelperDB.locked = false
+        TankBarsDB.locked = false
         frame:SetMovable(true)
         frame:EnableMouse(true)
     end)

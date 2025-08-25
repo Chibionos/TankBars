@@ -1,5 +1,5 @@
 local addonName, addon = ...
-local TBH = TankBarHelper
+local TBH = TankBars
 
 local bossAbilityFrame = nil
 local bossAbilityBar = nil
@@ -25,10 +25,10 @@ local TANK_BUSTER_ABILITIES = {
 local function CreateBossAbilityFrame()
     if bossAbilityFrame then return end
     
-    local frame = TankBarHelperFrame
+    local frame = TankBarsFrame
     if not frame then return end
     
-    bossAbilityFrame = CreateFrame("Frame", "TankBarHelperBossAbilityFrame", frame, "BackdropTemplate")
+    bossAbilityFrame = CreateFrame("Frame", "TankBarsBossAbilityFrame", frame, "BackdropTemplate")
     bossAbilityFrame:SetSize(200, 60)
     bossAbilityFrame:SetPoint("TOP", frame, "BOTTOM", 0, -60)
     
@@ -101,7 +101,7 @@ local function UpdateBossAbilityBar(abilityName, timeRemaining, maxTime, expecte
         CreateBossAbilityFrame()
     end
     
-    if not bossAbilityFrame or not TankBarHelperDB.showBossAbilities then
+    if not bossAbilityFrame or not TankBarsDB.showBossAbilities then
         return
     end
     
@@ -178,7 +178,7 @@ local function OnBigWigsBar(bar)
 end
 
 local function UpdateActiveTimers()
-    if not TankBarHelperDB or not TankBarHelperDB.showBossAbilities then
+    if not TankBarsDB or not TankBarsDB.showBossAbilities then
         if bossAbilityFrame then
             bossAbilityFrame:Hide()
         end

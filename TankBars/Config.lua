@@ -1,5 +1,5 @@
 local addonName, addon = ...
-local TBH = TankBarHelper
+local TBH = TankBars
 
 SLASH_TANKBARHELPER1 = "/tbh"
 SLASH_TANKBARHELPER2 = "/tankbar"
@@ -29,10 +29,10 @@ local function SetScale(scale)
         return
     end
     
-    local frame = TankBarHelperFrame
+    local frame = TankBarsFrame
     if frame then
         frame:SetScale(scale)
-        TankBarHelperDB.scale = scale
+        TankBarsDB.scale = scale
         print("|cff00ccffTank Bar Helper:|r Scale set to " .. scale)
     end
 end
@@ -44,7 +44,7 @@ local function SetWidth(width)
         return
     end
     
-    TankBarHelperDB.width = width
+    TankBarsDB.width = width
     TBH:UpdateSettings()
     print("|cff00ccffTank Bar Helper:|r Width set to " .. width)
 end
@@ -56,7 +56,7 @@ local function SetHeight(height)
         return
     end
     
-    TankBarHelperDB.height = height
+    TankBarsDB.height = height
     TBH:UpdateSettings()
     print("|cff00ccffTank Bar Helper:|r Height set to " .. height)
 end
@@ -77,7 +77,7 @@ local function ToggleOption(option, state)
     end
     
     local enabled = state == "on"
-    TankBarHelperDB[dbKey] = enabled
+    TankBarsDB[dbKey] = enabled
     TBH:UpdateSettings()
     
     local status = enabled and "|cff00ff00enabled|r" or "|cffff0000disabled|r"
@@ -85,12 +85,12 @@ local function ToggleOption(option, state)
 end
 
 local function ResetSettings()
-    TankBarHelperDB = nil
+    TankBarsDB = nil
     ReloadUI()
 end
 
 local function CreateConfigPanel()
-    local panel = CreateFrame("Frame", "TankBarHelperConfigPanel", UIParent, "BasicFrameTemplateWithInset")
+    local panel = CreateFrame("Frame", "TankBarsConfigPanel", UIParent, "BasicFrameTemplateWithInset")
     panel:SetSize(400, 500)
     panel:SetPoint("CENTER")
     panel:SetMovable(true)
@@ -113,9 +113,9 @@ local function CreateConfigPanel()
         checkbox.text:SetPoint("LEFT", checkbox, "RIGHT", 5, 0)
         checkbox.text:SetText(text)
         
-        checkbox:SetChecked(TankBarHelperDB[dbKey])
+        checkbox:SetChecked(TankBarsDB[dbKey])
         checkbox:SetScript("OnClick", function(self)
-            TankBarHelperDB[dbKey] = self:GetChecked()
+            TankBarsDB[dbKey] = self:GetChecked()
             TBH:UpdateSettings()
         end)
         
@@ -128,7 +128,7 @@ local function CreateConfigPanel()
         slider:SetPoint("TOPLEFT", panel, "TOPLEFT", 30, yOffset)
         slider:SetWidth(340)
         slider:SetMinMaxValues(min, max)
-        slider:SetValue(TankBarHelperDB[dbKey])
+        slider:SetValue(TankBarsDB[dbKey])
         slider:SetValueStep(step)
         slider:SetObeyStepOnDrag(true)
         
@@ -140,12 +140,12 @@ local function CreateConfigPanel()
         valueText:SetPoint("TOP", slider, "BOTTOM", 0, -2)
         
         slider:SetScript("OnValueChanged", function(self, value)
-            TankBarHelperDB[dbKey] = value
+            TankBarsDB[dbKey] = value
             valueText:SetText(string.format("%.1f", value))
             TBH:UpdateSettings()
         end)
         
-        valueText:SetText(string.format("%.1f", TankBarHelperDB[dbKey]))
+        valueText:SetText(string.format("%.1f", TankBarsDB[dbKey]))
         
         yOffset = yOffset - 50
         return slider
@@ -160,10 +160,10 @@ local function CreateConfigPanel()
         local colorSwatch = button:CreateTexture(nil, "OVERLAY")
         colorSwatch:SetSize(16, 16)
         colorSwatch:SetPoint("RIGHT", button, "LEFT", -5, 0)
-        colorSwatch:SetColorTexture(unpack(TankBarHelperDB[dbKey]))
+        colorSwatch:SetColorTexture(unpack(TankBarsDB[dbKey]))
         
         button:SetScript("OnClick", function()
-            local r, g, b, a = unpack(TankBarHelperDB[dbKey])
+            local r, g, b, a = unpack(TankBarsDB[dbKey])
             ColorPickerFrame:SetColorRGB(r, g, b)
             ColorPickerFrame.hasOpacity = true
             ColorPickerFrame.opacity = a
@@ -172,14 +172,14 @@ local function CreateConfigPanel()
             ColorPickerFrame.func = function()
                 local r, g, b = ColorPickerFrame:GetColorRGB()
                 local a = OpacitySliderFrame:GetValue()
-                TankBarHelperDB[dbKey] = {r, g, b, a}
+                TankBarsDB[dbKey] = {r, g, b, a}
                 colorSwatch:SetColorTexture(r, g, b, a)
                 TBH:UpdateSettings()
             end
             
             ColorPickerFrame.opacityFunc = ColorPickerFrame.func
             ColorPickerFrame.cancelFunc = function(previousValues)
-                TankBarHelperDB[dbKey] = previousValues
+                TankBarsDB[dbKey] = previousValues
                 colorSwatch:SetColorTexture(unpack(previousValues))
                 TBH:UpdateSettings()
             end

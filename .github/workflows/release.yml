@@ -39,17 +39,17 @@ jobs:
 
       - name: Update TOC version
         run: |
-          sed -i "s/## Version:.*/## Version: ${{ steps.version.outputs.version_number }}/" TankBarHelper/TankBarHelper.toc
+          sed -i "s/## Version:.*/## Version: ${{ steps.version.outputs.version_number }}/" TankBars/TankBars.toc
           
       - name: Create addon package
         id: package
         run: |
           # Create the package directory
-          PACKAGE_NAME="TankBarHelper-${{ steps.version.outputs.version }}"
+          PACKAGE_NAME="TankBars-${{ steps.version.outputs.version }}"
           mkdir -p "$PACKAGE_NAME"
           
           # Copy addon files
-          cp -r TankBarHelper/* "$PACKAGE_NAME/"
+          cp -r TankBars/* "$PACKAGE_NAME/"
           
           # Remove unnecessary files
           find "$PACKAGE_NAME" -name "*.md" -delete
@@ -83,7 +83,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ steps.version.outputs.version }}
-          release_name: Tank Bar Helper ${{ steps.version.outputs.version }}
+          release_name: TankBars ${{ steps.version.outputs.version }}
           body_path: RELEASE_NOTES.md
           draft: false
           prerelease: false
@@ -108,7 +108,7 @@ jobs:
           if [[ -n "$CF_API_KEY" && -n "$CF_PROJECT_ID" ]]; then
             RESPONSE=$(curl -s -o response.txt -w "%{http_code}" \
               -H "X-Api-Token: $CF_API_KEY" \
-              -F "metadata={\"changelog\":\"$(cat CHANGELOG.txt | jq -Rs .)\",\"changelogType\":\"markdown\",\"displayName\":\"Tank Bar Helper ${{ steps.version.outputs.version }}\",\"gameVersions\":[10467],\"releaseType\":\"release\"}" \
+              -F "metadata={\"changelog\":\"$(cat CHANGELOG.txt | jq -Rs .)\",\"changelogType\":\"markdown\",\"displayName\":\"TankBars ${{ steps.version.outputs.version }}\",\"gameVersions\":[10467],\"releaseType\":\"release\"}" \
               -F "file=@${{ steps.package.outputs.zip_file }}" \
               "https://wow.curseforge.com/api/projects/$CF_PROJECT_ID/upload-file")
             

@@ -1,4 +1,4 @@
-# Tank Bar Helper
+# TankBars
 
 [![GitHub release](https://img.shields.io/github/v/release/Chibionos/TankBars)](https://github.com/Chibionos/TankBars/releases)
 [![CurseForge](https://img.shields.io/badge/CurseForge-Download-orange)](https://www.curseforge.com/wow/addons/tankbars)
@@ -24,12 +24,12 @@ A clean and satisfying World of Warcraft addon for tanks that displays health an
 ## Installation
 
 ### CurseForge Client (Recommended)
-1. Search for "Tank Bar Helper" in the CurseForge client
+1. Search for "TankBars" in the CurseForge client
 2. Click Install
 
 ### Manual Installation
 1. Download the latest release from [Releases](https://github.com/Chibionos/TankBars/releases)
-2. Extract the `TankBarHelper` folder
+2. Extract the `TankBars` folder
 3. Copy it to your WoW addons directory:
    - **Retail**: `World of Warcraft\_retail_\Interface\AddOns\`
    - **Classic**: `World of Warcraft\_classic_\Interface\AddOns\`
@@ -39,7 +39,7 @@ A clean and satisfying World of Warcraft addon for tanks that displays health an
 
 ### Interface Options
 Access the configuration through:
-- **System Menu**: ESC → Options → Addons → Tank Bar Helper
+- **System Menu**: ESC → Options → Addons → TankBars
 - **Slash Command**: `/tbh config`
 
 ### Quick Commands
@@ -62,7 +62,7 @@ Access the configuration through:
 ```bash
 git clone https://github.com/Chibionos/TankBars.git
 cd TankBars
-# The TankBarHelper folder contains the addon
+# The TankBars folder contains the addon
 ```
 
 ### Contributing
