@@ -103,42 +103,54 @@ jobs:
         run: |
           # CurseForge upload
           if [[ -n "$CF_API_KEY" && -n "$CF_PROJECT_ID" ]]; then
+            # Fetch valid game version IDs for WoW Retail
+            echo "Fetching valid game version IDs from CurseForge API..."
+            VERSIONS_JSON=$(curl -s -H "X-Api-Token: $CF_API_KEY" \
+              "https://wow.curseforge.com/api/game/versions")
+            
+            # Try to find the current WoW retail version IDs
+            # Look for versions with gameVersionTypeID 517 (WoW Retail)
+            # We'll include multiple recent versions for broader compatibility
+            GAME_VERSION_IDS=$(echo "$VERSIONS_JSON" | \
+              grep -o '"id":[0-9]*,"gameVersionTypeID":517' | \
+              grep -o '"id":[0-9]*' | \
+              sed 's/"id"://' | \
+              head -5 | \
+              paste -sd "," -)
+            
+            if [[ -z "$GAME_VERSION_IDS" ]]; then
+              echo "❌ Failed to fetch game version IDs from CurseForge API"
+              echo "API Response: $VERSIONS_JSON"
+              exit 1
+            fi
+            
+            echo "Found game version IDs: $GAME_VERSION_IDS"
+            
             # Prepare changelog - properly escape for JSON
             CHANGELOG=$(cat CHANGELOG.txt | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | sed ':a;N;$!ba;s/\n/\\n/g')
             
-            # Create metadata JSON as a single line
-            # Use 517 for WoW Retail (the game type, not specific patch versions)
-            METADATA="{\"changelog\":\"$CHANGELOG\",\"changelogType\":\"markdown\",\"displayName\":\"TankBars ${{ steps.version.outputs.version }}\",\"gameVersions\":[517],\"releaseType\":\"release\"}"
+            # Create metadata JSON with the fetched game version IDs
+            METADATA="{\"changelog\":\"$CHANGELOG\",\"changelogType\":\"markdown\",\"displayName\":\"TankBars ${{ steps.version.outputs.version }}\",\"gameVersions\":[$GAME_VERSION_IDS],\"releaseType\":\"release\"}"
             
             echo "Uploading to CurseForge project ID: $CF_PROJECT_ID"
             echo "File: ${{ steps.package.outputs.zip_file }}"
+            echo "Metadata: $METADATA"
             
-            # Try both endpoints - legacy first, then new API
-            echo "Trying legacy endpoint..."
+            # Upload to CurseForge (only use the WoW endpoint)
+            echo "Uploading to CurseForge..."
             RESPONSE=$(curl -s -o response.txt -w "%{http_code}" \
               -H "X-Api-Token: $CF_API_KEY" \
               -F "metadata=$METADATA" \
               -F "file=@${{ steps.package.outputs.zip_file }}" \
               "https://wow.curseforge.com/api/projects/$CF_PROJECT_ID/upload-file")
             
-            if [[ "$RESPONSE" == "404" ]]; then
-              echo "Legacy endpoint failed, trying new API endpoint..."
-              RESPONSE=$(curl -s -o response2.txt -w "%{http_code}" \
-                -H "x-api-key: $CF_API_KEY" \
-                -F "metadata=$METADATA" \
-                -F "file=@${{ steps.package.outputs.zip_file }}" \
-                "https://minecraft.curseforge.com/api/projects/$CF_PROJECT_ID/upload-file")
-              if [[ "$RESPONSE" != "404" ]]; then
-                mv response2.txt response.txt
-              fi
-            fi
-            
             if [[ "$RESPONSE" == "200" || "$RESPONSE" == "201" ]]; then
               echo "✅ Successfully uploaded to CurseForge"
               cat response.txt
             else
-              echo "⚠️ CurseForge upload failed with status: $RESPONSE"
+              echo "❌ CurseForge upload failed with status: $RESPONSE"
               cat response.txt
+              exit 1
             fi
           else
             echo "⚠️ CurseForge credentials not configured, skipping upload"
