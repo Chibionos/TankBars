@@ -107,7 +107,8 @@ jobs:
             CHANGELOG=$(cat CHANGELOG.txt | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | sed ':a;N;$!ba;s/\n/\\n/g')
             
             # Create metadata JSON as a single line
-            METADATA="{\"changelog\":\"$CHANGELOG\",\"changelogType\":\"markdown\",\"displayName\":\"TankBars ${{ steps.version.outputs.version }}\",\"gameVersions\":[10522],\"releaseType\":\"release\"}"
+            # Game version IDs: 517 = WoW Retail, 11124 = 11.0.5, 11306 = 11.0.7
+            METADATA="{\"changelog\":\"$CHANGELOG\",\"changelogType\":\"markdown\",\"displayName\":\"TankBars ${{ steps.version.outputs.version }}\",\"gameVersions\":[11306],\"releaseType\":\"release\"}"
             
             echo "Uploading to CurseForge project ID: $CF_PROJECT_ID"
             echo "File: ${{ steps.package.outputs.zip_file }}"
