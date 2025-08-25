@@ -1,0 +1,10 @@
+## Interface: 110002
+## Title: Tank Bar Helper
+## Author: DarthChibi
+## Version: 1.0.0
+## Notes: Clean and satisfying health and shield tracker for tanks
+## SavedVariables: TankBarHelperDB
+## SavedVariablesPerCharacter: TankBarHelperCharDB
+
+Core.lua
+Config.lua
