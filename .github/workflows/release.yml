@@ -109,12 +109,28 @@ jobs:
             # Create metadata JSON as a single line
             METADATA="{\"changelog\":\"$CHANGELOG\",\"changelogType\":\"markdown\",\"displayName\":\"TankBars ${{ steps.version.outputs.version }}\",\"gameVersions\":[10522],\"releaseType\":\"release\"}"
             
-            echo "Uploading to CurseForge..."
+            echo "Uploading to CurseForge project ID: $CF_PROJECT_ID"
+            echo "File: ${{ steps.package.outputs.zip_file }}"
+            
+            # Try both endpoints - legacy first, then new API
+            echo "Trying legacy endpoint..."
             RESPONSE=$(curl -s -o response.txt -w "%{http_code}" \
-              -H "x-api-key: $CF_API_KEY" \
+              -H "X-Api-Token: $CF_API_KEY" \
               -F "metadata=$METADATA" \
               -F "file=@${{ steps.package.outputs.zip_file }}" \
-              "https://api.curseforge.com/api/projects/$CF_PROJECT_ID/upload-file")
+              "https://wow.curseforge.com/api/projects/$CF_PROJECT_ID/upload-file")
+            
+            if [[ "$RESPONSE" == "404" ]]; then
+              echo "Legacy endpoint failed, trying new API endpoint..."
+              RESPONSE=$(curl -s -o response2.txt -w "%{http_code}" \
+                -H "x-api-key: $CF_API_KEY" \
+                -F "metadata=$METADATA" \
+                -F "file=@${{ steps.package.outputs.zip_file }}" \
+                "https://minecraft.curseforge.com/api/projects/$CF_PROJECT_ID/upload-file")
+              if [[ "$RESPONSE" != "404" ]]; then
+                mv response2.txt response.txt
+              fi
+            fi
             
             if [[ "$RESPONSE" == "200" || "$RESPONSE" == "201" ]]; then
               echo "✅ Successfully uploaded to CurseForge"
