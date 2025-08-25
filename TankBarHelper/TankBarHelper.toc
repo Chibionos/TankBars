@@ -7,4 +7,6 @@
 ## SavedVariablesPerCharacter: TankBarHelperCharDB
 
 Core.lua
+BossAbilityPrediction.lua
+InterfaceOptions.lua
 Config.lua

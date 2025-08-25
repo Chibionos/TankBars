@@ -14,6 +14,15 @@ local shieldPercentText = nil
 local skullIcon = nil
 local skullCircle = nil
 local damageProjectionBar = nil
+local threatBar = nil
+local threatText = nil
+local offTankFrame = nil
+local offTankHealthBar = nil
+local offTankShieldBar = nil
+local offTankHealthText = nil
+local offTankShieldText = nil
+local offTankNameText = nil
+local offTankUnit = nil
 local smoothHealthValue = 0
 local smoothShieldValue = 0
 local lastHealthUpdate = 0
@@ -24,8 +33,9 @@ local damageHistoryTime = 5
 local projectedDamage = 0
 local projectionTime = 5
 local safetyBuffer = 1.2
+local currentThreatPercent = 0
 
-local defaults = {
+TBH.defaults = {
     position = {"CENTER", UIParent, "CENTER", -200, 0},
     width = 30,
     height = 250,
@@ -40,7 +50,10 @@ local defaults = {
     smoothAnimation = true,
     animationSpeed = 0.15,
     showDamageProjection = true,
-    lowHealthThreshold = 40
+    lowHealthThreshold = 40,
+    showOffTank = true,
+    offTankPosition = "RIGHT",
+    showBossAbilities = true
 }
 
 local function SafeCall(func, ...)
@@ -71,17 +84,17 @@ end
 
 local function InitializeDB()
     TankBarHelperDB = TankBarHelperDB or {}
-    for key, value in pairs(defaults) do
+    for key, value in pairs(TBH.defaults) do
         if TankBarHelperDB[key] == nil then
             TankBarHelperDB[key] = value
         end
     end
     
-    TankBarHelperDB.width = ValidateNumber(TankBarHelperDB.width, defaults.width)
-    TankBarHelperDB.height = ValidateNumber(TankBarHelperDB.height, defaults.height)
-    TankBarHelperDB.spacing = ValidateNumber(TankBarHelperDB.spacing, defaults.spacing)
-    TankBarHelperDB.numberSize = ValidateNumber(TankBarHelperDB.numberSize, defaults.numberSize)
-    TankBarHelperDB.animationSpeed = ValidateNumber(TankBarHelperDB.animationSpeed, defaults.animationSpeed)
+    TankBarHelperDB.width = ValidateNumber(TankBarHelperDB.width, TBH.defaults.width)
+    TankBarHelperDB.height = ValidateNumber(TankBarHelperDB.height, TBH.defaults.height)
+    TankBarHelperDB.spacing = ValidateNumber(TankBarHelperDB.spacing, TBH.defaults.spacing)
+    TankBarHelperDB.numberSize = ValidateNumber(TankBarHelperDB.numberSize, TBH.defaults.numberSize)
+    TankBarHelperDB.animationSpeed = ValidateNumber(TankBarHelperDB.animationSpeed, TBH.defaults.animationSpeed)
     
     TankBarHelperDB.healthColor = ValidateColor(TankBarHelperDB.healthColor)
     TankBarHelperDB.shieldColor = ValidateColor(TankBarHelperDB.shieldColor)
@@ -89,7 +102,7 @@ local function InitializeDB()
     TankBarHelperDB.borderColor = ValidateColor(TankBarHelperDB.borderColor)
     
     if type(TankBarHelperDB.position) ~= "table" or #TankBarHelperDB.position < 3 then
-        TankBarHelperDB.position = defaults.position
+        TankBarHelperDB.position = TBH.defaults.position
     end
 end
 
@@ -250,6 +263,105 @@ local function SetupFrame()
             skullIcon:SetDrawLayer("OVERLAY", 6)
             skullIcon:Hide()
         end
+        
+        if not threatBar then
+            threatBar = CreateFrame("StatusBar", nil, frame)
+            threatBar:SetSize((TankBarHelperDB.width * 2) + TankBarHelperDB.spacing, 8)
+            threatBar:SetPoint("TOP", frame, "BOTTOM", 0, -30)
+            threatBar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
+            threatBar:SetStatusBarColor(0, 1, 0, 1)
+            threatBar:SetOrientation("HORIZONTAL")
+            threatBar:SetMinMaxValues(0, 100)
+            threatBar:SetValue(0)
+            
+            local threatBg = threatBar:CreateTexture(nil, "BACKGROUND")
+            threatBg:SetAllPoints()
+            threatBg:SetTexture("Interface\\TargetingFrame\\UI-StatusBar")
+            threatBg:SetVertexColor(0.1, 0.1, 0.1, 0.8)
+            
+            local threatBorder = CreateFrame("Frame", nil, threatBar, "BackdropTemplate")
+            threatBorder:SetPoint("TOPLEFT", -2, 2)
+            threatBorder:SetPoint("BOTTOMRIGHT", 2, -2)
+            threatBorder:SetBackdrop({
+                edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+                edgeSize = 8,
+                insets = { left = 2, right = 2, top = 2, bottom = 2 }
+            })
+            threatBorder:SetBackdropBorderColor(0.3, 0.3, 0.3, 1)
+        end
+        
+        if not threatText then
+            threatText = threatBar:CreateFontString(nil, "OVERLAY")
+            threatText:SetPoint("CENTER", threatBar, "CENTER", 0, 0)
+            threatText:SetFont("Fonts\\FRIZQT__.TTF", 10, "OUTLINE")
+            threatText:SetTextColor(1, 1, 1)
+            threatText:SetText("0%")
+        end
+        
+        if not offTankFrame then
+            offTankFrame = CreateFrame("Frame", "TankBarHelperOffTankFrame", UIParent, "BackdropTemplate")
+            offTankFrame:SetSize(totalWidth / 1.5, TankBarHelperDB.height / 1.5)
+            offTankFrame:SetPoint("LEFT", frame, "RIGHT", 20, 0)
+            
+            if offTankFrame.SetBackdrop then
+                offTankFrame:SetBackdrop({
+                    bgFile = "Interface\\Buttons\\WHITE8x8",
+                    edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+                    tile = false,
+                    tileSize = 0,
+                    edgeSize = 10,
+                    insets = { left = 2, right = 2, top = 2, bottom = 2 }
+                })
+                offTankFrame:SetBackdropColor(0.05, 0.05, 0.05, 0.6)
+                offTankFrame:SetBackdropBorderColor(0.2, 0.2, 0.2, 0.8)
+            end
+            
+            offTankHealthBar = CreateFrame("StatusBar", nil, offTankFrame)
+            offTankHealthBar:SetPoint("LEFT", offTankFrame, "LEFT", 3, 0)
+            offTankHealthBar:SetSize(TankBarHelperDB.width / 1.5, (TankBarHelperDB.height / 1.5) - 4)
+            offTankHealthBar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
+            offTankHealthBar:SetStatusBarColor(0.2, 0.8, 0.2, 1)
+            offTankHealthBar:SetOrientation("VERTICAL")
+            offTankHealthBar:SetReverseFill(false)
+            
+            local offTankHealthBg = offTankHealthBar:CreateTexture(nil, "BACKGROUND")
+            offTankHealthBg:SetAllPoints()
+            offTankHealthBg:SetTexture("Interface\\TargetingFrame\\UI-StatusBar")
+            offTankHealthBg:SetVertexColor(0.1, 0.1, 0.1, 0.8)
+            
+            offTankShieldBar = CreateFrame("StatusBar", nil, offTankFrame)
+            offTankShieldBar:SetPoint("RIGHT", offTankFrame, "RIGHT", -3, 0)
+            offTankShieldBar:SetSize(TankBarHelperDB.width / 1.5, (TankBarHelperDB.height / 1.5) - 4)
+            offTankShieldBar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
+            offTankShieldBar:SetStatusBarColor(0.2, 0.6, 1, 1)
+            offTankShieldBar:SetOrientation("VERTICAL")
+            offTankShieldBar:SetReverseFill(false)
+            
+            local offTankShieldBg = offTankShieldBar:CreateTexture(nil, "BACKGROUND")
+            offTankShieldBg:SetAllPoints()
+            offTankShieldBg:SetTexture("Interface\\TargetingFrame\\UI-StatusBar")
+            offTankShieldBg:SetVertexColor(0.1, 0.1, 0.1, 0.8)
+            
+            offTankNameText = offTankFrame:CreateFontString(nil, "OVERLAY")
+            offTankNameText:SetPoint("BOTTOM", offTankFrame, "TOP", 0, 2)
+            offTankNameText:SetFont("Fonts\\FRIZQT__.TTF", 10, "OUTLINE")
+            offTankNameText:SetTextColor(0.8, 0.8, 0.8)
+            offTankNameText:SetText("No Tank")
+            
+            offTankHealthText = offTankFrame:CreateFontString(nil, "OVERLAY")
+            offTankHealthText:SetPoint("TOP", offTankHealthBar, "BOTTOM", 0, -3)
+            offTankHealthText:SetFont("Fonts\\FRIZQT__.TTF", 9, "OUTLINE")
+            offTankHealthText:SetTextColor(0.8, 1, 0.8)
+            offTankHealthText:SetText("0")
+            
+            offTankShieldText = offTankFrame:CreateFontString(nil, "OVERLAY")
+            offTankShieldText:SetPoint("TOP", offTankShieldBar, "BOTTOM", 0, -3)
+            offTankShieldText:SetFont("Fonts\\FRIZQT__.TTF", 9, "OUTLINE")
+            offTankShieldText:SetTextColor(0.6, 0.8, 1)
+            offTankShieldText:SetText("0")
+            
+            offTankFrame:Hide()
+        end
     end) then
         print("|cffff0000Tank Bar Helper:|r Failed to setup frame")
         return false
@@ -287,6 +399,117 @@ local function SmoothUpdate(current, target, speed)
     return current + (diff * speed)
 end
 
+
+local function UpdateThreat()
+    if not threatBar or not threatText then return end
+    
+    local isTanking, status, threatpct, rawthreatpct, threatvalue = UnitDetailedThreatSituation("player", "target")
+    
+    if not UnitExists("target") or not UnitCanAttack("player", "target") then
+        threatBar:SetValue(0)
+        threatText:SetText("No Target")
+        threatBar:SetStatusBarColor(0.5, 0.5, 0.5, 0.5)
+        return
+    end
+    
+    threatpct = threatpct or 0
+    currentThreatPercent = threatpct
+    
+    threatBar:SetValue(threatpct)
+    threatText:SetText(string.format("%d%%", threatpct))
+    
+    if isTanking then
+        threatBar:SetStatusBarColor(0, 0.7, 1, 1)
+        if threatpct < 110 then
+            local pulse = math.sin(GetTime() * 5) * 0.2 + 0.8
+            threatBar:SetAlpha(pulse)
+        else
+            threatBar:SetAlpha(1)
+        end
+    elseif status and status >= 2 then
+        threatBar:SetStatusBarColor(1, 0.6, 0, 1)
+        threatBar:SetAlpha(1)
+    elseif status and status >= 1 then
+        threatBar:SetStatusBarColor(1, 1, 0, 1)
+        threatBar:SetAlpha(1)
+    else
+        threatBar:SetStatusBarColor(1, 0, 0, 1)
+        local pulse = math.sin(GetTime() * 10) * 0.3 + 0.7
+        threatBar:SetAlpha(pulse)
+    end
+end
+
+local function FindOffTank()
+    if IsInRaid() then
+        for i = 1, GetNumGroupMembers() do
+            local unit = "raid" .. i
+            if UnitExists(unit) and not UnitIsUnit(unit, "player") then
+                local role = UnitGroupRolesAssigned(unit)
+                if role == "TANK" then
+                    return unit
+                end
+            end
+        end
+    elseif IsInGroup() then
+        for i = 1, GetNumGroupMembers() - 1 do
+            local unit = "party" .. i
+            if UnitExists(unit) and not UnitIsUnit(unit, "player") then
+                local role = UnitGroupRolesAssigned(unit)
+                if role == "TANK" then
+                    return unit
+                end
+            end
+        end
+    end
+    return nil
+end
+
+local function UpdateOffTankBar()
+    if not offTankFrame or not TankBarHelperDB.showOffTank then return end
+    
+    offTankUnit = FindOffTank()
+    
+    if not offTankUnit or not UnitExists(offTankUnit) then
+        offTankFrame:Hide()
+        return
+    end
+    
+    offTankFrame:Show()
+    
+    local name = UnitName(offTankUnit) or "Unknown"
+    local currentHealth = UnitHealth(offTankUnit) or 0
+    local maxHealth = UnitHealthMax(offTankUnit) or 1
+    local currentShield = UnitGetTotalAbsorbs(offTankUnit) or 0
+    
+    if maxHealth <= 0 then maxHealth = 1 end
+    
+    offTankHealthBar:SetMinMaxValues(0, maxHealth)
+    offTankHealthBar:SetValue(currentHealth)
+    
+    local maxShield = maxHealth * 0.3
+    if maxShield <= 0 then maxShield = 1 end
+    
+    offTankShieldBar:SetMinMaxValues(0, maxShield)
+    offTankShieldBar:SetValue(currentShield)
+    
+    offTankNameText:SetText(name)
+    
+    local healthStr = FormatNumber(currentHealth)
+    local shieldStr = FormatNumber(currentShield)
+    local healthPct = math.floor((currentHealth / maxHealth) * 100)
+    
+    offTankHealthText:SetText(healthStr .. " (" .. healthPct .. "%)")
+    offTankShieldText:SetText(shieldStr)
+    
+    local healthPercent = (currentHealth / maxHealth) * 100
+    if healthPercent < 30 then
+        offTankHealthBar:SetStatusBarColor(1, 0.2, 0.2, 1)
+    elseif healthPercent < 50 then
+        offTankHealthBar:SetStatusBarColor(1, 0.8, 0.2, 1)
+    else
+        offTankHealthBar:SetStatusBarColor(0.2, 0.8, 0.2, 1)
+    end
+end
 
 local function UpdateDamageHistory()
     local currentTime = GetTime()
@@ -456,6 +679,9 @@ local function UpdateBars()
         end
         
         
+        UpdateThreat()
+        UpdateOffTankBar()
+        
         lastHealthUpdate = currentHealth
         lastShieldUpdate = currentShield
     end)
@@ -474,6 +700,12 @@ local function OnEvent(self, event, unit)
     
     if event == "PLAYER_LOGIN" or event == "PLAYER_ENTERING_WORLD" then
         SafeCall(UpdateBars)
+    elseif event == "PLAYER_TARGET_CHANGED" then
+        SafeCall(UpdateThreat)
+    elseif event == "GROUP_ROSTER_UPDATE" or event == "RAID_ROSTER_UPDATE" then
+        SafeCall(UpdateOffTankBar)
+    elseif event == "UNIT_THREAT_SITUATION_UPDATE" or event == "UNIT_THREAT_LIST_UPDATE" then
+        SafeCall(UpdateThreat)
     elseif unit == "player" then
         SafeCall(UpdateBars)
     end
@@ -499,6 +731,11 @@ function TBH:Initialize()
             frame:RegisterEvent("UNIT_ABSORB_AMOUNT_CHANGED")
             frame:RegisterEvent("PLAYER_ENTERING_WORLD")
             frame:RegisterEvent("PLAYER_LOGIN")
+            frame:RegisterEvent("UNIT_THREAT_SITUATION_UPDATE")
+            frame:RegisterEvent("UNIT_THREAT_LIST_UPDATE")
+            frame:RegisterEvent("PLAYER_TARGET_CHANGED")
+            frame:RegisterEvent("GROUP_ROSTER_UPDATE")
+            frame:RegisterEvent("RAID_ROSTER_UPDATE")
             
             frame:SetScript("OnEvent", OnEvent)
             frame:SetScript("OnUpdate", OnUpdate)
@@ -508,6 +745,10 @@ function TBH:Initialize()
             isInitialized = true
             
             UpdateBars()
+            
+            if TBH.InitializeBossAbilityPrediction then
+                TBH:InitializeBossAbilityPrediction()
+            end
             
             print("|cff00ccffTank Bar Helper|r loaded successfully!")
         end
