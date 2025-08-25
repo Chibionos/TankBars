@@ -3,7 +3,7 @@ name: Package and Release (BigWigs Packager)
 on:
   push:
     tags:
-      - 'v*.*.*'
+      - 'disabled-v*.*.*'
       - 'alpha*'
       - 'beta*'
 
