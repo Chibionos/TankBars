@@ -1,0 +1,156 @@
+name: Release Addon
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+jobs:
+  release:
+    if: github.event_name == 'push' || (github.event.pull_request.merged == true)
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get version
+        id: version
+        run: |
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            # For tags, use the tag name
+            VERSION=${GITHUB_REF#refs/tags/}
+          else
+            # For PR merges, increment patch version
+            LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+            VERSION=$(echo $LATEST_TAG | sed 's/v//')
+            IFS='.' read -r major minor patch <<< "$VERSION"
+            NEW_VERSION="v$major.$minor.$((patch + 1))"
+            VERSION=$NEW_VERSION
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "version_number=${VERSION#v}" >> $GITHUB_OUTPUT
+
+      - name: Update TOC version
+        run: |
+          sed -i "s/## Version:.*/## Version: ${{ steps.version.outputs.version_number }}/" TankBarHelper/TankBarHelper.toc
+          
+      - name: Create addon package
+        id: package
+        run: |
+          # Create the package directory
+          PACKAGE_NAME="TankBarHelper-${{ steps.version.outputs.version }}"
+          mkdir -p "$PACKAGE_NAME"
+          
+          # Copy addon files
+          cp -r TankBarHelper/* "$PACKAGE_NAME/"
+          
+          # Remove unnecessary files
+          find "$PACKAGE_NAME" -name "*.md" -delete
+          find "$PACKAGE_NAME" -name ".git*" -delete
+          find "$PACKAGE_NAME" -name ".DS_Store" -delete
+          
+          # Create the zip file
+          zip -r "$PACKAGE_NAME.zip" "$PACKAGE_NAME"
+          
+          echo "package_name=$PACKAGE_NAME" >> $GITHUB_OUTPUT
+          echo "zip_file=$PACKAGE_NAME.zip" >> $GITHUB_OUTPUT
+
+      - name: Generate Changelog
+        id: changelog
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            # Use PR body as changelog
+            echo "${{ github.event.pull_request.body }}" > RELEASE_NOTES.md
+          else
+            # Generate changelog from commits since last tag
+            git log $(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")..HEAD --pretty=format:"- %s" > RELEASE_NOTES.md
+          fi
+          
+          # Limit changelog size for CurseForge (max 5000 chars)
+          head -c 4900 RELEASE_NOTES.md > CHANGELOG.txt
+          
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          release_name: Tank Bar Helper ${{ steps.version.outputs.version }}
+          body_path: RELEASE_NOTES.md
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ steps.package.outputs.zip_file }}
+          asset_name: ${{ steps.package.outputs.zip_file }}
+          asset_content_type: application/zip
+
+      - name: Upload to CurseForge
+        if: secrets.CURSEFORGE_API_TOKEN != ''
+        env:
+          CF_API_KEY: ${{ secrets.CURSEFORGE_API_TOKEN }}
+          CF_PROJECT_ID: ${{ secrets.CURSEFORGE_PROJECT_ID }}
+        run: |
+          # CurseForge upload
+          if [[ -n "$CF_API_KEY" && -n "$CF_PROJECT_ID" ]]; then
+            RESPONSE=$(curl -s -o response.txt -w "%{http_code}" \
+              -H "X-Api-Token: $CF_API_KEY" \
+              -F "metadata={\"changelog\":\"$(cat CHANGELOG.txt | jq -Rs .)\",\"changelogType\":\"markdown\",\"displayName\":\"Tank Bar Helper ${{ steps.version.outputs.version }}\",\"gameVersions\":[10467],\"releaseType\":\"release\"}" \
+              -F "file=@${{ steps.package.outputs.zip_file }}" \
+              "https://wow.curseforge.com/api/projects/$CF_PROJECT_ID/upload-file")
+            
+            if [[ "$RESPONSE" == "200" ]]; then
+              echo "✅ Successfully uploaded to CurseForge"
+            else
+              echo "⚠️ CurseForge upload failed with status: $RESPONSE"
+              cat response.txt
+            fi
+          else
+            echo "⚠️ CurseForge credentials not configured, skipping upload"
+          fi
+
+      - name: Upload to Wago
+        if: secrets.WAGO_API_TOKEN != ''
+        env:
+          WAGO_API_TOKEN: ${{ secrets.WAGO_API_TOKEN }}
+          WAGO_PROJECT_ID: ${{ secrets.WAGO_PROJECT_ID }}
+        run: |
+          # Wago.io upload
+          if [[ -n "$WAGO_API_TOKEN" && -n "$WAGO_PROJECT_ID" ]]; then
+            RESPONSE=$(curl -s -o response.txt -w "%{http_code}" \
+              -H "Authorization: Bearer $WAGO_API_TOKEN" \
+              -H "Accept: application/json" \
+              -F "file=@${{ steps.package.outputs.zip_file }}" \
+              -F "version=${{ steps.version.outputs.version_number }}" \
+              -F "changelog=@CHANGELOG.txt" \
+              -F "stability=stable" \
+              "https://addons.wago.io/api/projects/$WAGO_PROJECT_ID/releases")
+            
+            if [[ "$RESPONSE" == "201" ]]; then
+              echo "✅ Successfully uploaded to Wago"
+            else
+              echo "⚠️ Wago upload failed with status: $RESPONSE"
+              cat response.txt
+            fi
+          else
+            echo "⚠️ Wago credentials not configured, skipping upload"
+          fi
+
+      - name: Clean up
+        run: |
+          rm -rf "${{ steps.package.outputs.package_name }}"
+          rm -f "${{ steps.package.outputs.zip_file }}"
+          rm -f RELEASE_NOTES.md CHANGELOG.txt response.txt
