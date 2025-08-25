@@ -2,6 +2,9 @@ package-as: TankBars
 
 enable-nolib-creation: no
 
+move-folders:
+  TankBars: TankBars
+
 ignore:
   - .github
   - .git
