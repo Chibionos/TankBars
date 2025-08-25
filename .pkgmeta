@@ -1,4 +1,4 @@
-package-as: TankBarHelper
+package-as: TankBars
 
 enable-nolib-creation: no
 
@@ -12,9 +12,10 @@ ignore:
   - CHANGELOG.md
   - "*.zip"
   - .claude
+  - docs
 
 move-folders:
-  TankBarHelper: TankBarHelper
+  TankBars: TankBars
 
 manual-changelog:
   filename: CHANGELOG.md

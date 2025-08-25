@@ -1,9 +1,9 @@
 local addonName, addon = ...
-local TBH = TankBarHelper
+local TBH = TankBars
 
 local function CreateInterfaceOptions()
     -- Main settings panel
-    local mainPanel = CreateFrame("Frame", "TankBarHelperOptionsPanel", UIParent)
+    local mainPanel = CreateFrame("Frame", "TankBarsOptionsPanel", UIParent)
     mainPanel.name = "Tank Bar Helper"
     mainPanel:Hide()
     
@@ -28,9 +28,9 @@ local function CreateInterfaceOptions()
         checkbox:SetPoint("TOPLEFT", 16, yOffset)
         checkbox.Text:SetText(text)
         
-        checkbox:SetChecked(TankBarHelperDB[dbKey])
+        checkbox:SetChecked(TankBarsDB[dbKey])
         checkbox:SetScript("OnClick", function(self)
-            TankBarHelperDB[dbKey] = self:GetChecked()
+            TankBarsDB[dbKey] = self:GetChecked()
             TBH:UpdateSettings()
         end)
         
@@ -49,7 +49,7 @@ local function CreateInterfaceOptions()
         slider:SetPoint("TOPLEFT", 20, yOffset)
         slider:SetWidth(200)
         slider:SetMinMaxValues(min, max)
-        slider:SetValue(TankBarHelperDB[dbKey])
+        slider:SetValue(TankBarsDB[dbKey])
         slider:SetValueStep(step)
         slider:SetObeyStepOnDrag(true)
         
@@ -59,10 +59,10 @@ local function CreateInterfaceOptions()
         
         local valueText = slider:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
         valueText:SetPoint("TOP", slider, "BOTTOM", 0, -2)
-        valueText:SetText(string.format("%.1f", TankBarHelperDB[dbKey]))
+        valueText:SetText(string.format("%.1f", TankBarsDB[dbKey]))
         
         slider:SetScript("OnValueChanged", function(self, value)
-            TankBarHelperDB[dbKey] = value
+            TankBarsDB[dbKey] = value
             valueText:SetText(string.format("%.1f", value))
             TBH:UpdateSettings()
         end)
@@ -168,13 +168,13 @@ local function CreateInterfaceOptions()
         -- Update all checkboxes and sliders with current values
         for _, child in ipairs({mainPanel:GetChildren()}) do
             if child:GetObjectType() == "CheckButton" then
-                for key, value in pairs(TankBarHelperDB) do
+                for key, value in pairs(TankBarsDB) do
                     if child.dbKey == key then
                         child:SetChecked(value)
                     end
                 end
             elseif child:GetObjectType() == "Slider" then
-                for key, value in pairs(TankBarHelperDB) do
+                for key, value in pairs(TankBarsDB) do
                     if child.dbKey == key then
                         child:SetValue(value)
                     end
@@ -209,10 +209,10 @@ end
 -- Initialize when addon loads
 local function InitializeInterfaceOptions()
     -- Ensure DB is initialized
-    if not TankBarHelperDB then
-        TankBarHelperDB = {}
+    if not TankBarsDB then
+        TankBarsDB = {}
         for key, value in pairs(TBH.defaults or {}) do
-            TankBarHelperDB[key] = value
+            TankBarsDB[key] = value
         end
     end
     
