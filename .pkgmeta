@@ -1,0 +1,23 @@
+package-as: TankBarHelper
+
+enable-nolib-creation: no
+
+ignore:
+  - .github
+  - .git
+  - .gitignore
+  - .pkgmeta
+  - README.md
+  - LICENSE
+  - CHANGELOG.md
+  - "*.zip"
+  - .claude
+
+move-folders:
+  TankBarHelper: TankBarHelper
+
+manual-changelog:
+  filename: CHANGELOG.md
+  markup-type: markdown
+
+license-output: LICENSE

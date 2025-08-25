@@ -196,6 +196,8 @@ local function CreateConfigPanel()
     CreateCheckbox("Glow on Low Health", "glowOnLowHealth")
     CreateCheckbox("Pulse on Damage", "pulseOnDamage")
     CreateCheckbox("Show Empty Absorb", "showEmptyAbsorb")
+    CreateCheckbox("Show Off-Tank Bar", "showOffTank")
+    CreateCheckbox("Show Boss Abilities", "showBossAbilities")
     
     CreateSlider("Bar Width", "width", 20, 100, 5)
     CreateSlider("Bar Height", "height", 100, 500, 10)

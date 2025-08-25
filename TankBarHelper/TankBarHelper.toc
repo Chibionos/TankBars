@@ -1,10 +1,17 @@
 ## Interface: 110002
 ## Title: Tank Bar Helper
 ## Author: DarthChibi
-## Version: 1.0.0
+## Version: @project-version@
 ## Notes: Clean and satisfying health and shield tracker for tanks
 ## SavedVariables: TankBarHelperDB
 ## SavedVariablesPerCharacter: TankBarHelperCharDB
+## X-Category: Tank
+## X-Website: https://github.com/Chibionos/TankBars
+## X-Curse-Project-ID: @project-id@
+## X-WoWI-ID: @wowi-project-id@
+## X-Wago-ID: @wago-project-id@
 
 Core.lua
+BossAbilityPrediction.lua
+InterfaceOptions.lua
 Config.lua
