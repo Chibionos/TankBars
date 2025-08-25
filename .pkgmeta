@@ -14,9 +14,6 @@ ignore:
   - .claude
   - docs
 
-move-folders:
-  TankBars: TankBars
-
 manual-changelog:
   filename: CHANGELOG.md
   markup-type: markdown
