@@ -42,22 +42,31 @@ jobs:
       - name: Create addon package
         id: package
         run: |
-          # Create the package directory
-          PACKAGE_NAME="TankBars-${{ steps.version.outputs.version }}"
-          mkdir -p "$PACKAGE_NAME"
+          # WoW addons must have the folder name match the addon name (TankBars)
+          # The zip file can be versioned, but the folder inside must be "TankBars"
           
-          # Copy addon files
-          cp -r TankBars/* "$PACKAGE_NAME/"
+          # Create a temporary directory for packaging
+          mkdir -p package_temp
+          
+          # Copy addon files to properly named folder
+          cp -r TankBars package_temp/
           
           # Remove unnecessary files
-          find "$PACKAGE_NAME" -name "*.md" -delete
-          find "$PACKAGE_NAME" -name ".git*" -delete
-          find "$PACKAGE_NAME" -name ".DS_Store" -delete
+          find package_temp/TankBars -name "*.md" -delete
+          find package_temp/TankBars -name ".git*" -delete
+          find package_temp/TankBars -name ".DS_Store" -delete
           
-          # Create the zip file
-          zip -r "$PACKAGE_NAME.zip" "$PACKAGE_NAME"
+          # Create the versioned zip file with proper structure
+          PACKAGE_NAME="TankBars-${{ steps.version.outputs.version }}"
+          cd package_temp
+          zip -r "../$PACKAGE_NAME.zip" TankBars
+          cd ..
           
-          echo "package_name=$PACKAGE_NAME" >> $GITHUB_OUTPUT
+          # Verify the zip structure
+          echo "Verifying zip structure:"
+          unzip -l "$PACKAGE_NAME.zip" | head -20
+          
+          echo "package_name=TankBars" >> $GITHUB_OUTPUT
           echo "zip_file=$PACKAGE_NAME.zip" >> $GITHUB_OUTPUT
 
       - name: Generate Changelog
@@ -184,6 +193,6 @@ jobs:
 
       - name: Clean up
         run: |
-          rm -rf "${{ steps.package.outputs.package_name }}"
+          rm -rf package_temp
           rm -f "${{ steps.package.outputs.zip_file }}"
           rm -f RELEASE_NOTES.md CHANGELOG.txt response.txt
